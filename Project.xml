@@ -16,6 +16,7 @@
 	<!-- ____________________________ Window Settings ___________________________ -->
 
 	<!--These window settings apply to all targets-->
+	<!-- fps does not seem to do anything -->>
 	<window width="640" height="480" fps="60" background="#000000" hardware="true" vsync="false" />
 
 	<!--HTML5-specific-->
@@ -31,7 +32,7 @@
 
 	<set name="BUILD_DIR" value="export" />
 	<source path="source" />
-	<assets path="assets" />
+	<assets path="assets" exclude=".png" />
 
 	<!-- _______________________________ Libraries ______________________________ -->
 
