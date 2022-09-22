@@ -1,5 +1,7 @@
 package;
 
+import openfl.display.FPS;
+import haxe.Template;
 import openfl.display.Bitmap;
 import flixel.text.FlxBitmapText;
 import openfl.Assets;
@@ -17,6 +19,7 @@ import flixel.text.FlxText;
 import flixel.tweens.FlxTween;
 import flixel.util.FlxColor;
 
+
 class PlayState extends FlxState
 {
 	var beginning:Date = null;
@@ -27,15 +30,18 @@ class PlayState extends FlxState
 	var bitmapFont: FlxBitmapFont;
 	var board: Array<Array<FlxBitmapText>> = null;
 	var useTextAsCells = true; // false for text as row
-	var isTextChanging = false;
 	var exitTimeDuration = 10000;
+	var deltaTimes = [];
+	static var width = 100;
+	static var height = 40;
 
 	override public function create():Void
 	{
 		super.create();
 		// FlxG.fixedTimestep = true;
-		// FlxG.updateFramerate = 1; // WTF does this even do?
-		// FlxG.drawFramerate = 30;
+		FlxG.updateFramerate = 600;
+		FlxG.drawFramerate = 600;
+		FlxG.mouse.useSystemCursor = true;
 
 		// var save = new FlxSave();
 		// save.bind("myitem");
@@ -43,21 +49,6 @@ class PlayState extends FlxState
 		// FlxG.save.data.name = "Hello";
 		// FlxG.save.flush();
 		// save.flush();
-
-		if (false) {
-			spaceship = new FlxSprite();
-			spaceship.loadGraphic(AssetPaths.spaceship__png);
-			spaceship.x = 100;
-			spaceship.y = 0;
-			add(spaceship);
-		}
-		/*
-			FlxTween.tween(spaceship, {
-				x: FlxG.width - spaceship.width,
-				y: FlxG.height - spaceship.height,
-				angle: 90.0
-			}, 5, {type: FlxTweenType.PINGPONG});
-		 */
 
 		frameCountText = new FlxText(0, 0, FlxG.width, "0", 64);
 		frameCountText.setFormat(null, 64, FlxColor.RED, FlxTextAlign.CENTER);
@@ -68,10 +59,10 @@ class PlayState extends FlxState
 		board = GenerateRandomBoardFlxBitmapText(bitmapFont);
 		var newboard = GenerateRandomBoardStr();
 
-		for (y in 0...100)
+		for (y in 0...height)
 		{
 			var s = "";
-			for (x in 0...400)
+			for (x in 0...width)
 			{
 				if (useTextAsCells) {
 					add(board[y][x]);
@@ -94,7 +85,10 @@ class PlayState extends FlxState
 	{
 		// trace("update start, framecount: " + frameCount);
 		super.update(elapsed);
-
+		deltaTimes.push(elapsed);
+		if (deltaTimes.length > 100) {
+			deltaTimes.shift();
+		}
 
 		frameCount++;
 		// trace((Date.now().getTime() - beginning.getTime()) / 1000);
@@ -105,30 +99,52 @@ class PlayState extends FlxState
 			System.exit(0);
 		}
 
+		if (FlxG.keys.justPressed.Q) {
+			var script = "
+				var sample = 'My name is <strong>::name::</strong>, <em>::age::</em> years old';
+				var user = {name: 'Mark', age: 30};
+				var template = new haxe.Template(sample);
+				var output = template.execute(user);
+				trace(File.absolutePath());
+				trace(output);
+
+				function main() {
+					// var err = 0;;
+					// var angles = [60,60];  // cos(60) is 0.5
+					sum = 0;
+					for( a in angles )
+						sum += Math.cos(a);
+					return sum;
+				}
+
+				function main2() {
+					return 'asd';
+				}
+
+				main();
+			";
+			var parser = new hscript.Parser();
+			var program = parser.parseString(script);
+			var interp = new hscript.Interp();
+			interp.variables.set("Math", Math); // share the Math class
+			interp.variables.set("angles", [0,1,2,3]); // set the angles list
+			try {
+				trace(interp.execute(program) );
+			} catch(e:Any) {
+
+			}
+				
+
+			var sample = 'Compiled version. My name is <strong>::name::</strong>, <em>::age::</em> years old';
+			var user = {name: 'Mark', age: 30};
+			var template = new haxe.Template(sample);
+			var output = template.execute(user);
+			trace(output);
+		}
+
+
 		frameCountText.y = FlxG.height - 64;
 		frameCountText.text = Std.string(frameCount);
-		if (false) {
-			spaceship.x += 10 * elapsed;
-
-			if (FlxG.keys.pressed.LEFT)
-				spaceship.x--;
-			if (FlxG.keys.pressed.RIGHT)
-				spaceship.x++;
-			if (FlxG.keys.justReleased.UP)
-			{
-				spaceship.y = spaceship.y - 100;
-			}
-			if (FlxG.keys.justReleased.DOWN)
-			{
-				spaceship.y = spaceship.y + 100;
-			}
-
-			if (FlxG.keys.anyJustPressed([FlxKey.ESCAPE, FlxKey.SPACE]))
-			{
-				spaceship.x = FlxG.width / 2 - spaceship.width / 2;
-				spaceship.y = FlxG.height / 2 - spaceship.height / 2;
-			}
-		}
 
 		if (FlxG.keys.justPressed.P)
 		{
@@ -139,13 +155,13 @@ class PlayState extends FlxState
 		}
 
 		
-		if (isTextChanging) {
+		if (FlxG.keys.pressed.Q) {
 
 			var newboard = GenerateRandomBoardStr();
-			for (y in 0...100)
+			for (y in 0...height)
 			{
 				var s = new StringBuf();
-				for (x in 0...400)
+				for (x in 0...width)
 				{
 					if(useTextAsCells) {
 						board[y][x].text = newboard[y][x];
@@ -168,9 +184,9 @@ class PlayState extends FlxState
 		var board:Array<Array<String>> = [for (y in 0...240) [for (x in 0...400) null]];
 		var randomPool = "ABCDEFGHIJKLMNOPQRSTUVWabcdefghijklmnopqrstuvw";
 		var random = new FlxRandom();
-		for (y in 0...100) {
-			for (x in 0...400) {
-				var letter = randomPool.charAt(random.int(0, randomPool.length));
+		for (y in 0...height) {
+			for (x in 0...width) {
+				var letter = randomPool.charAt(random.int(0, randomPool.length - 1));
 				board[y][x] = letter;
 			}
 		}
@@ -182,9 +198,9 @@ class PlayState extends FlxState
 		var board:Array<Array<FlxText>> = [for (y in 0...240) [for (x in 0...320) null]];
 		var randomPool = "ABCDEFGHIJKLMNOPQRSTUVWabcdefghijklmnopqrstuvw";
 		var random = new FlxRandom();
-		for (y in 0...100)
+		for (y in 0...height)
 		{
-			for (x in 0...100)
+			for (x in 0...width)
 			{
 				var letter = randomPool.charAt(random.int(0, randomPool.length));
 				var flxText = new FlxText(x * 14, y * 14, 0, letter, 14);
@@ -199,9 +215,9 @@ class PlayState extends FlxState
 		var board:Array<Array<FlxBitmapText>> = [for (y in 0...240) [for (x in 0...400) null]];
 		var randomPool = "ABCDEFGHIJKLMNOPQRSTUVWabcdefghijklmnopqrstuvw";
 		var random = new FlxRandom();
-		for (y in 0...100)
+		for (y in 0...height)
 		{
-			for (x in 0...400)
+			for (x in 0...width)
 			{
 				var letter = randomPool.charAt(random.int(0, randomPool.length));
 				var flxText = new FlxBitmapText(bitmapFont);
@@ -212,5 +228,14 @@ class PlayState extends FlxState
 			}
 		}
 		return board;
+	}
+
+	/**
+    	Uses Math.round to fix a floating point number to a set precision.
+	**/
+	public static function round(number:Float, ?precision=2): Float
+	{
+		number *= Math.pow(10, precision);
+		return Math.round(number) / Math.pow(10, precision);
 	}
 }
